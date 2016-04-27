@@ -1,0 +1,37 @@
+[[pools]]
+name = "backend.{{project}}"
+regions = ["p1.usw1"]
+image = "{{project}}/backend"
+tag = "latest"
+instances = 4
+deploy_step_size = 2
+save_empty_deploys=2
+
+[[pools]]
+name = "api.{{project}}"
+regions = ["p1.usw1"]
+image = "{{project}}/api"
+tag = "latest"
+instances = 4
+deploy_step_size = 2
+save_empty_deploys=2
+
+  [pools.environment]
+  SWAGGER_FILE = "./swagger.yaml"
+  BACKEND_POOL = "backend.{{project}}"
+
+[[pools]]
+name = "api-lb.{{project}}"
+ipv4 = "{{ip}}"
+regions = ["p1.usw1"]
+image = "quadra/http-lb"
+tag = "latest"
+instances = 2
+deploy_step_size = 1
+save_empty_deploys=2
+
+  [pools.environment]
+  BACKEND_POOL = "api.{{project}}"
+  BACKEND_CHECK_URL = "{{healthCheck}}"
+  BACKEND_CHECK_INTERVAL = 2000
+  BACKEND_PORT = 8080

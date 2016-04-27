@@ -1,0 +1,39 @@
+title: Registry
+version: 0.0.1
+description: I'm an API
+baseUri: api-lb.krakenidentities.qq.p1.usw1.opendns.com
+schemes:
+    - http
+formats:
+    - application/json
+quadra:
+  project: krakenidentities
+models:
+  manifest:
+    path: /projects/{projectId:integer}/manifests/{id:integer}
+    methods:
+      - list
+      - read
+      - update
+    response:
+      id: &id
+        type: integer
+        required: true
+      projectId:
+        type: integer
+        required: true
+      version: &version
+        type: integer
+        required: true
+      url:
+        type: url
+        required: true
+      latest:
+        type: boolean
+        required: true
+    modify:
+      id: *id
+      version: *version
+      manifest:
+        type: object
+        required: true

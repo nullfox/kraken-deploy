@@ -1,0 +1,92 @@
+#!/usr/bin/env node
+
+import Util from 'Util';
+import Path from 'path';
+import FS from 'fs';
+import YAML from 'yamljs';
+import Handlebars from 'Handlebars';
+import ShellJS from 'shelljs/global';
+
+const createProject = (project) => {
+  const existing = exec('qq project list | grep %s', kraken.quadra.project).toString();
+
+  if (existing.length === 0) {
+    return exec(Util.format(
+      'qq project create %s --label "%s"',
+      kraken.quadra.project,
+      'A kraken generated project!'
+    )).code;
+  }
+
+  return 0;
+};
+
+const buildAndPush = (directory, project, image) => {
+  cd(directory);
+
+  return exec(Util.format(
+    'docker build -t %s/%s . && qq image push %s/%s --tags latest',
+    project,
+    image,
+    project,
+    image
+  )).code;
+};
+
+// Directories!
+const rootDir = pwd().toString();
+const deployDir = Path.join(rootDir, 'deploy');
+const apiDir = Path.join(deployDir, 'kraken-api');
+const quakeDir = Path.join(rootDir, '.quake');
+
+// Create the dir if it doesn't exist
+try {
+  FS.statSync(deployDir);
+} catch (e) {
+  mkdir(deployDir);
+}
+
+// Update if the repo already exists, otherwise clone it
+try {
+  FS.statSync(apiDir);
+  cd(apiDir);
+  exec('git pull');
+} catch (e) {
+  cd(deployDir);
+  exec('git clone https://github.com/nullfox/kraken-api.git');
+  cd(apiDir);
+}
+
+// Copy the kraken file to the local root for Docker purposes
+cp('../../.kraken', '.kraken');
+
+const kraken = YAML.load(Path.join(apiDir, '.kraken'));
+const project = kraken.quadra.project;
+
+if (createProject(project) !== 0) {
+  throw new Error(Util.format('Could not create project "%s"', project));
+}
+
+if (buildAndPush(apiDir, project, 'api') !== 0) {
+  throw new Error(Util.format('Could not build or push image "%s/%s"', project, 'api'));
+}
+
+if (buildAndPush(rootDir, project, 'backend') !== 0) {
+  throw new Error(Util.format('Could not build or push image "%s/%s"', project, 'backend'));
+}
+
+var source = FS.readFileSync(Path.join(__dirname, '../templates/cluster.toml'));
+var template = Handlebars.compile(source);
+
+// Create the dir if it doesn't exist
+try {
+  FS.statSync(quakeDir);
+} catch (e) {
+  mkdir(quakeDir);
+}
+
+FS.writeFileSync(Path.join(quakeDir, 'cluster.toml'), template(kraken.quadra));
+
+cd(rootDir);
+
+exec('quake cluster update');
