@@ -1,6 +1,6 @@
 {
   "name": "@nullfox/kraken-deploy",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "scripts": {
     "build": "mkdir -p lib && babel src -d lib && babel src/kraken-deploy -o lib/kraken-deploy",
