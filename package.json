@@ -1,9 +1,9 @@
 {
   "name": "@nullfox/kraken-deploy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "scripts": {
-    "build": "babel src -d lib && babel src/kraken-deploy -o lib/kraken-deploy",
+    "build": "mkdir -p lib && babel src -d lib && babel src/kraken-deploy -o lib/kraken-deploy",
     "lint": "eslint src/ test/*.test.js",
     "test": "mocha --compilers js:babel-register",
     "prepublish": "npm run build"
