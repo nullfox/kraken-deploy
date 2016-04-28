@@ -6,11 +6,12 @@
     "build": "babel src -d lib && babel src/kraken-deploy -o lib/kraken-deploy",
     "lint": "eslint src/ test/*.test.js",
     "test": "mocha --compilers js:babel-register",
-    "postinstall": "npm run build"
+    "prepublish": "npm run build"
   },
   "bin": {
     "kraken-deploy": "./lib/kraken-deploy"
   },
+  "private": true,
   "author": "",
   "license": "ISC",
   "dependencies": {
