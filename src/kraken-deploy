@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
-import Util from 'Util';
+import Util from 'util';
 import Path from 'path';
 import FS from 'fs';
 import YAML from 'yamljs';
-import Handlebars from 'Handlebars';
-import ShellJS from 'shelljs/global';
+import Handlebars from 'handlebars';
+import ShellJS from 'shelljs';
 
 const createProject = (project) => {
-  const existing = exec('qq project list | grep %s', kraken.quadra.project).toString();
+  const existing = ShellJS.exec('qq project list | grep %s', project).toString();
 
   if (existing.length === 0) {
-    return exec(Util.format(
+    return ShellJS.exec(Util.format(
       'qq project create %s --label "%s"',
-      kraken.quadra.project,
+      project,
       'A kraken generated project!'
     )).code;
   }
@@ -22,9 +22,9 @@ const createProject = (project) => {
 };
 
 const buildAndPush = (directory, project, image) => {
-  cd(directory);
+  ShellJS.cd(directory);
 
-  return exec(Util.format(
+  return ShellJS.exec(Util.format(
     'docker build -t %s/%s . && qq image push %s/%s --tags latest',
     project,
     image,
@@ -34,7 +34,7 @@ const buildAndPush = (directory, project, image) => {
 };
 
 // Directories!
-const rootDir = pwd().toString();
+const rootDir = ShellJS.pwd().toString();
 const deployDir = Path.join(rootDir, 'deploy');
 const apiDir = Path.join(deployDir, 'kraken-api');
 const quakeDir = Path.join(rootDir, '.quake');
@@ -43,22 +43,22 @@ const quakeDir = Path.join(rootDir, '.quake');
 try {
   FS.statSync(deployDir);
 } catch (e) {
-  mkdir(deployDir);
+  ShellJS.mkdir(deployDir);
 }
 
 // Update if the repo already exists, otherwise clone it
 try {
   FS.statSync(apiDir);
-  cd(apiDir);
-  exec('git pull');
+  ShellJS.cd(apiDir);
+  ShellJS.exec('git pull');
 } catch (e) {
-  cd(deployDir);
-  exec('git clone https://github.com/nullfox/kraken-api.git');
-  cd(apiDir);
+  ShellJS.cd(deployDir);
+  ShellJS.exec('git clone https://github.com/nullfox/kraken-api.git');
+  ShellJS.cd(apiDir);
 }
 
 // Copy the kraken file to the local root for Docker purposes
-cp('../../.kraken', '.kraken');
+ShellJS.cp('../../.kraken', '.kraken');
 
 const kraken = YAML.load(Path.join(apiDir, '.kraken'));
 const project = kraken.quadra.project;
@@ -75,18 +75,18 @@ if (buildAndPush(rootDir, project, 'backend') !== 0) {
   throw new Error(Util.format('Could not build or push image "%s/%s"', project, 'backend'));
 }
 
-var source = FS.readFileSync(Path.join(__dirname, '../templates/cluster.toml'));
-var template = Handlebars.compile(source);
+const source = FS.readFileSync(Path.join(__dirname, '../templates/cluster.toml'));
+const template = Handlebars.compile(source);
 
 // Create the dir if it doesn't exist
 try {
   FS.statSync(quakeDir);
 } catch (e) {
-  mkdir(quakeDir);
+  ShellJS.mkdir(quakeDir);
 }
 
 FS.writeFileSync(Path.join(quakeDir, 'cluster.toml'), template(kraken.quadra));
 
-cd(rootDir);
+ShellJS.cd(rootDir);
 
-exec('quake cluster update');
+ShellJS.exec('quake cluster update');
