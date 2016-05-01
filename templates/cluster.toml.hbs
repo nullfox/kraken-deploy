@@ -7,6 +7,13 @@ instances = 4
 deploy_step_size = 2
 save_empty_deploys=2
 
+  {{#if backend.env}}
+  [pools.environment]
+  {{#each backend.env}}
+  {{@key}} = "{{this}}"
+  {{/each}}
+  {{/if}}
+
 [[pools]]
 name = "api.{{project}}"
 regions = ["p1.usw1"]
@@ -19,10 +26,15 @@ save_empty_deploys=2
   [pools.environment]
   SWAGGER_FILE = "./swagger.yaml"
   BACKEND_POOL = "backend.{{project}}"
+  {{#if api.env}}
+  {{#each api.env}}
+  {{@key}} = "{{this}}"
+  {{/each}}
+  {{/if}}
 
 [[pools]]
 name = "api-lb.{{project}}"
-ipv4 = "{{ip}}"
+ipv4 = "{{lb.ip}}"
 regions = ["p1.usw1"]
 image = "quadra/http-lb"
 tag = "latest"
@@ -32,6 +44,11 @@ save_empty_deploys=2
 
   [pools.environment]
   BACKEND_POOL = "api.{{project}}"
-  BACKEND_CHECK_URL = "{{healthCheck}}"
+  BACKEND_CHECK_URL = "{{lb.healthCheck}}"
   BACKEND_CHECK_INTERVAL = 2000
   BACKEND_PORT = 8080
+  {{#if lb.env}}
+  {{#each lb.env}}
+  {{@key}} = "{{this}}"
+  {{/each}}
+  {{/if}}
